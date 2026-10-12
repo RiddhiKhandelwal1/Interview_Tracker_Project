@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-surface-0: #0B0E14;
+  --color-surface-1: #12161F;
+  --color-border: #1F2430;
+  
+  --color-accent: #4FC1C9;
+  --color-text-primary: #E6E8EB;
+  --color-text-secondary: #7A8290;
+  
+  --color-easy: #4FAE7E;
+  --color-medium: #D9A253;
+  --color-hard: #C7595A;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-surface-0);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+
+  ::selection {
+    background-color: rgba(79, 193, 201, 0.3);
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--color-surface-0); }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border: 2px solid var(--color-surface-0); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-text-secondary); }
+
+  *:focus-visible {
+    outline: 1px solid var(--color-accent);
+    outline-offset: 1px;
+    border-radius: 2px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 500;
+  }
+}
+
+@layer utilities {
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+@keyframes counter-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-counter { animation: counter-enter 0.4s ease-out both; }

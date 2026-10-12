@@ -1,0 +1,262 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  name      String   @db.VarChar(100)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  role      UserRole @default(user)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  refreshTokens    RefreshToken[]
+  problems         Problem[]
+  notes            Note[]
+  interviews       Interview[]
+  resumes          Resume[]
+  activityLogs     ActivityLog[]
+
+  problemRevisions ProblemRevision[]
+  mistakes         Mistake[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  userId    Int      @map("user_id") @db.UnsignedInt
+  tokenHash String   @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_rt_user_id")
+  @@index([tokenHash], map: "idx_rt_token_hash")
+  @@index([expiresAt], map: "idx_rt_expires")
+  @@map("refresh_tokens")
+}
+
+model Problem {
+  id           Int               @id @default(autoincrement()) @db.UnsignedInt
+  userId       Int               @map("user_id") @db.UnsignedInt
+  title        String            @db.VarChar(255)
+  difficulty   ProblemDifficulty @default(easy)
+  status       ProblemStatus     @default(pending)
+  platform     ProblemPlatform   @default(leetcode)
+  url          String?           @db.VarChar(500)
+  notes        String?           @db.Text
+  isFavourite  Boolean           @default(false) @map("is_favourite")
+  dateSolved   DateTime?         @map("date_solved")
+  revisionDate DateTime?         @map("revision_date") @db.Date
+  version      Int               @default(1) @db.UnsignedInt
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @default(now()) @updatedAt @map("updated_at")
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemTopics ProblemTopic[]
+  linkedNotes   Note[]
+  revisions     ProblemRevision[]
+  mistakes      Mistake[]
+
+  @@index([userId], map: "idx_problems_user_id")
+  @@index([userId, status], map: "idx_problems_status")
+  @@index([userId, difficulty], map: "idx_problems_difficulty")
+  @@index([userId, platform], map: "idx_problems_platform")
+  @@index([userId, revisionDate], map: "idx_problems_revision")
+  @@index([userId, isFavourite], map: "idx_problems_favourite")
+  @@map("problems")
+}
+
+enum ProblemDifficulty {
+  easy
+  medium
+  hard
+}
+
+enum ProblemStatus {
+  solved
+  revising
+  attempted
+  pending
+}
+
+enum ProblemPlatform {
+  leetcode
+  codeforces
+  codechef
+  gfg
+  interviewbit
+  other
+}
+
+model Topic {
+  id   Int    @id @default(autoincrement()) @db.UnsignedInt
+  name String @unique @db.VarChar(100)
+
+  problemTopics ProblemTopic[]
+
+  @@map("topics")
+}
+
+model ProblemTopic {
+  problemId Int @map("problem_id") @db.UnsignedInt
+  topicId   Int @map("topic_id") @db.UnsignedInt
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  topic   Topic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, topicId])
+  @@map("problem_topics")
+}
+
+model Note {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  userId       Int       @map("user_id") @db.UnsignedInt
+  title        String    @db.VarChar(255)
+  content      String    @db.Text
+  tags         Json?
+  problemId    Int?      @map("problem_id") @db.UnsignedInt
+  revisionDate DateTime? @map("revision_date") @db.Date
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem? @relation(fields: [problemId], references: [id], onDelete: SetNull)
+
+  @@index([userId], map: "idx_notes_user_id")
+  @@index([userId, problemId], map: "idx_notes_problem")
+  @@map("notes")
+}
+
+model Interview {
+  id              Int             @id @default(autoincrement()) @db.UnsignedInt
+  userId          Int             @map("user_id") @db.UnsignedInt
+  company         String          @db.VarChar(255)
+  role            String?         @db.VarChar(255)
+  status          InterviewStatus @default(applied)
+  interviewStage  String?         @map("interview_stage") @db.VarChar(100)
+  applicationDate DateTime?       @map("application_date") @db.Date
+  interviewDate   DateTime?       @map("interview_date")
+  jobUrl          String?         @map("job_url") @db.VarChar(500)
+  notes           String?         @db.Text
+  result          String?         @db.VarChar(100)
+  nextAction      String?         @map("next_action") @db.VarChar(255)
+  nextActionDate  DateTime?       @map("next_action_date") @db.Date
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_interviews_user_id")
+  @@index([userId, status], map: "idx_interviews_status")
+  @@index([userId, interviewDate], map: "idx_interviews_date")
+  @@index([userId, nextActionDate], map: "idx_interviews_next")
+  @@map("interviews")
+}
+
+enum InterviewStatus {
+  applied
+  oa
+  technical
+  hr
+  selected
+  rejected
+  on_hold
+}
+
+model Resume {
+  id            Int      @id @default(autoincrement()) @db.UnsignedInt
+  userId        Int      @map("user_id") @db.UnsignedInt
+  originalName  String   @map("original_name") @db.VarChar(255)
+  generatedName String   @map("generated_name") @db.VarChar(255)
+  filePath      String   @map("file_path") @db.VarChar(500)
+  fileSize      Int      @map("file_size") @db.UnsignedInt
+  mimeType      String   @default("application/pdf") @map("mime_type") @db.VarChar(50)
+  description   String?  @db.VarChar(500)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_resumes_user_id")
+  @@map("resumes")
+}
+
+model ActivityLog {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  userId     Int      @map("user_id") @db.UnsignedInt
+  action     String   @db.VarChar(50)
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   Int?     @map("entity_id") @db.UnsignedInt
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)], map: "idx_activity_user_date")
+  @@map("activity_logs")
+}
+
+// NEW FEATURE 2: Spaced Revision
+model ProblemRevision {
+  id             Int       @id @default(autoincrement()) @db.UnsignedInt
+  userId         Int       @map("user_id") @db.UnsignedInt
+  problemId      Int       @map("problem_id") @db.UnsignedInt
+  reviewCount    Int       @default(0) @map("review_count") @db.UnsignedInt
+  confidence     Int       @default(3)
+  lastReviewedAt DateTime? @map("last_reviewed_at")
+  nextReviewAt   DateTime  @map("next_review_at")
+  intervalDays   Int       @default(2) @map("interval_days") @db.UnsignedInt
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+  @@index([userId, nextReviewAt], map: "idx_revisions_user_next")
+  @@map("problem_revisions")
+}
+
+// NEW FEATURE 3: Mistake Journal
+model Mistake {
+  id        Int         @id @default(autoincrement()) @db.UnsignedInt
+  userId    Int         @map("user_id") @db.UnsignedInt
+  problemId Int         @map("problem_id") @db.UnsignedInt
+  type      MistakeType
+  notes     String?     @db.Text
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_mistakes_user_id")
+  @@index([userId, type], map: "idx_mistakes_user_type")
+  @@index([problemId], map: "idx_mistakes_problem_id")
+  @@map("mistakes")
+}
+
+enum MistakeType {
+  pattern_not_recognized
+  concept_gap
+  implementation_bug
+  edge_case
+  time_complexity
+  space_complexity
+  misread_question
+  could_not_derive_approach
+  debugging_issue
+  other
+}
